@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}燃料拉运汇总 - 燃料结算系统{% endblock %}
+
+{% block page_title %}燃料拉运汇总{% endblock %}
+
+{% block content %}
+<div class="mb-3 d-flex justify-content-between">
+    <a href="{{ url_for('transportation.index') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>返回拉运管理
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if summary %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>承运日期</th>
+                        <th>燃料合同名称</th>
+                        <th>运输单价</th>
+                        <th>运输金额</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in summary %}
+                    <tr>
+                        <td>{{ item.transport_date.strftime('%Y-%m') }}</td>
+                        <td>{{ item.contract_name }}</td>
+                        <td>{{ "%.2f"|format(item.total_unit_price) }}</td>
+                        <td>{{ "{:,.2f}".format(item.total_amount) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>暂无燃料拉运汇总数据。
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

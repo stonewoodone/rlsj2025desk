@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}首页 - 燃料结算系统{% endblock %}
+
+{% block page_title %}电厂燃料结算系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">欢迎使用燃料结算系统</h2>
+                <p class="card-text">
+                    本系统用于管理电厂燃料的结算流程，包括供应商管理、燃料合同管理、燃料矿发管理、燃料拉运管理、燃料拉运汇总和燃料到厂管理。
+                </p>
+                
+                {% if not current_user.is_authenticated %}
+                <div class="mt-4">
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary me-2">登录</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if current_user.is_authenticated %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                系统统计
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5 class="card-title">供应商数量</h5>
+                                <p class="card-text fs-2">{{ supplier_count|default(0) }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5 class="card-title">合同数量</h5>
+                                <p class="card-text fs-2">{{ contract_count|default(0) }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5 class="card-title">矿发数量</h5>
+                                <p class="card-text fs-2">{{ mine_delivery_count|default(0) }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5 class="card-title">拉运数量</h5>
+                                <p class="card-text fs-2">{{ transportation_count|default(0) }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5 class="card-title">拉运汇总数量</h5>
+                                <p class="card-text fs-2">{{ transportation_summary_count|default(0) }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5 class="card-title">到厂数量</h5>
+                                <p class="card-text fs-2">{{ arrival_count|default(0) }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                快速操作
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('suppliers.index') }}" class="btn btn-primary w-100">
+                            <i class="bi bi-building me-2"></i>供应商管理
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('contracts.index') }}" class="btn btn-primary w-100">
+                            <i class="bi bi-file-earmark-text me-2"></i>合同管理
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('mine_deliveries.index') }}" class="btn btn-primary w-100">
+                            <i class="bi bi-truck me-2"></i>矿发管理
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('transportation.index') }}" class="btn btn-primary w-100">
+                            <i class="bi bi-box-seam me-2"></i>拉运管理
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('transportation.summary') }}" class="btn btn-primary w-100">
+                            <i class="bi bi-bar-chart me-2"></i>拉运汇总
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('arrivals.index') }}" class="btn btn-primary w-100">
+                            <i class="bi bi-house-door me-2"></i>到厂管理
+                        </a>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <a href="{{ url_for('export_data') }}" class="btn btn-success w-100">
+                            <i class="bi bi-file-earmark-excel me-2"></i>导出数据
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %} 

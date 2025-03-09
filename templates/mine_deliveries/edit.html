@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+
+{% block title %}编辑燃料矿发记录 - 燃料结算系统{% endblock %}
+
+{% block page_title %}编辑燃料矿发记录{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" action="{{ url_for('mine_deliveries.edit', id=delivery.id) }}" id="mineDeliveryForm">
+                    {{ form.hidden_tag() }}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.supplier_id.label(class="form-label") }}
+                            {{ form.supplier_id(class="form-select", id="supplierId") }}
+                            {% for error in form.supplier_id.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.fuel_contract_id.label(class="form-label") }}
+                            {{ form.fuel_contract_id(class="form-select", id="fuelContractId") }}
+                            <div id="contractLoading" class="text-muted" style="display: none;">
+                                <small><i class="bi bi-hourglass-split"></i> 加载合同列表...</small>
+                            </div>
+                            {% for error in form.fuel_contract_id.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            {{ form.mine_quantity.label(class="form-label") }}
+                            {{ form.mine_quantity(class="form-control", id="mineQuantity") }}
+                            {% for error in form.mine_quantity.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.mine_calorific_value.label(class="form-label") }}
+                            {{ form.mine_calorific_value(class="form-control", id="mineCalorificValue", readonly=true) }}
+                            {% for error in form.mine_calorific_value.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.mine_unit_price.label(class="form-label") }}
+                            {{ form.mine_unit_price(class="form-control", id="mineUnitPrice", readonly=true) }}
+                            {% for error in form.mine_unit_price.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <div class="alert alert-info" id="coalPaymentInfo">
+                                <strong>煤款：</strong> <span id="coalPaymentValue">{{ "%.2f"|format(delivery.coal_payment) }}</span> 元
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('mine_deliveries.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>返回
+                        </a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const supplierId = document.getElementById('supplierId');
+        const fuelContractId = document.getElementById('fuelContractId');
+        const contractLoading = document.getElementById('contractLoading');
+        const mineQuantity = document.getElementById('mineQuantity');
+        const mineCalorificValue = document.getElementById('mineCalorificValue');
+        const mineUnitPrice = document.getElementById('mineUnitPrice');
+        const coalPaymentInfo = document.getElementById('coalPaymentInfo');
+        const coalPaymentValue = document.getElementById('coalPaymentValue');
+        const form = document.getElementById('mineDeliveryForm');
+        
+        // 保存初始合同ID和供应商ID，用于在加载合同列表后选中
+        const initialContractId = fuelContractId.value;
+        const initialSupplierId = supplierId.value;
+        
+        // 确保供应商ID是有效的整数
+        if (initialSupplierId && !isNaN(parseInt(initialSupplierId))) {
+            // 页面加载时，触发供应商change事件以加载合同列表
+            setTimeout(() => {
+                supplierId.dispatchEvent(new Event('change'));
+            }, 100);
+        }
+        
+        // 当选择供应商时，加载该供应商的合同列表
+        supplierId.addEventListener('change', function() {
+            // 清空并禁用合同下拉列表
+            fuelContractId.innerHTML = '<option value="">-- 请选择合同 --</option>';
+            fuelContractId.disabled = true;
+            
+            // 清空热值、单价和煤款
+            mineCalorificValue.value = '';
+            mineUnitPrice.value = '';
+            coalPaymentInfo.style.display = 'none';
+            
+            if (!this.value) {
+                return;
+            }
+            
+            // 显示加载提示
+            contractLoading.style.display = 'block';
+            
+            // 获取供应商的合同列表
+            fetch(`{{ url_for('mine_deliveries.get_supplier_contracts', supplier_id=0) }}`.replace('0', this.value))
+                .then(response => response.json())
+                .then(data => {
+                    // 隐藏加载提示
+                    contractLoading.style.display = 'none';
+                    
+                    // 如果没有合同，显示提示
+                    if (data.length === 0) {
+                        fuelContractId.innerHTML = '<option value="">该供应商没有合同</option>';
+                        return;
+                    }
+                    
+                    // 填充合同下拉列表
+                    let options = '<option value="">-- 请选择合同 --</option>';
+                    data.forEach(contract => {
+                        const selected = contract.id == initialContractId ? 'selected' : '';
+                        options += `<option value="${contract.id}" ${selected}>${contract.name}</option>`;
+                    });
+                    fuelContractId.innerHTML = options;
+                    fuelContractId.disabled = false;
+                    
+                    // 如果有选中的合同，触发change事件以加载热值和单价
+                    if (fuelContractId.value) {
+                        fuelContractId.dispatchEvent(new Event('change'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    contractLoading.style.display = 'none';
+                    fuelContractId.innerHTML = '<option value="">加载失败</option>';
+                });
+        });
+        
+        // 当选择合同时，自动填充热值和单价
+        fuelContractId.addEventListener('change', function() {
+            // 清空热值、单价和煤款
+            mineCalorificValue.value = '';
+            mineUnitPrice.value = '';
+            
+            if (!this.value) {
+                coalPaymentInfo.style.display = 'none';
+                return;
+            }
+            
+            fetch(`{{ url_for('mine_deliveries.get_contract_details', contract_id=0) }}`.replace('0', this.value))
+                .then(response => response.json())
+                .then(data => {
+                    mineCalorificValue.value = data.mine_calorific_value;
+                    mineUnitPrice.value = data.mine_unit_price.toFixed(2);
+                    calculateCoalPayment();
+                })
+                .catch(error => console.error('Error:', error));
+        });
+        
+        // 当数量变化时，计算煤款
+        mineQuantity.addEventListener('input', calculateCoalPayment);
+        
+        // 计算煤款
+        function calculateCoalPayment() {
+            const quantity = parseFloat(mineQuantity.value) || 0;
+            const price = parseFloat(mineUnitPrice.value) || 0;
+            
+            if (quantity > 0 && price > 0) {
+                const payment = quantity * price;
+                // 使用会计计数法显示煤款
+                coalPaymentValue.textContent = formatCurrency(payment);
+                coalPaymentInfo.style.display = 'block';
+            } else {
+                coalPaymentInfo.style.display = 'none';
+            }
+        }
+        
+        // 使用会计计数法格式化金额
+        function formatCurrency(amount) {
+            // 保留两位小数
+            const fixedAmount = amount.toFixed(2);
+            // 分割整数部分和小数部分
+            const parts = fixedAmount.split('.');
+            // 对整数部分每三位添加逗号
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            // 重新组合
+            return parts.join('.');
+        }
+        
+        // 表单提交前验证
+        form.addEventListener('submit', function(event) {
+            console.log('表单提交验证开始');
+            console.log('供应商ID:', supplierId.value);
+            console.log('合同ID:', fuelContractId.value);
+            console.log('矿发数量:', mineQuantity.value);
+            console.log('矿发热值:', mineCalorificValue.value);
+            console.log('矿发单价:', mineUnitPrice.value);
+            
+            // 检查供应商是否已选择
+            if (!supplierId.value || supplierId.value === '') {
+                event.preventDefault();
+                alert('请选择供应商');
+                supplierId.focus();
+                return;
+            }
+            
+            // 检查合同是否已选择
+            if (!fuelContractId.value || fuelContractId.value === '') {
+                event.preventDefault();
+                alert('请选择燃料合同');
+                fuelContractId.focus();
+                return;
+            }
+            
+            // 检查数量是否已填写
+            if (!mineQuantity.value) {
+                event.preventDefault();
+                alert('请输入矿发数量');
+                mineQuantity.focus();
+                return;
+            }
+            
+            // 确保热值和单价已自动填充
+            if (!mineCalorificValue.value || !mineUnitPrice.value) {
+                event.preventDefault();
+                alert('热值和单价未正确填充，请重新选择合同');
+                fuelContractId.focus();
+                return;
+            }
+            
+            // 确保合同下拉列表未被禁用
+            if (fuelContractId.disabled) {
+                console.log('提交前启用合同下拉列表');
+                fuelContractId.disabled = false;
+            }
+            
+            console.log('表单验证通过，准备提交');
+            console.log('合同下拉列表状态:', fuelContractId.disabled ? '禁用' : '启用');
+        });
+        
+        // 页面加载时，使用会计计数法格式化初始煤款
+        if (coalPaymentValue.textContent) {
+            const initialPayment = parseFloat(coalPaymentValue.textContent);
+            if (!isNaN(initialPayment)) {
+                coalPaymentValue.textContent = formatCurrency(initialPayment);
+            }
+        }
+    });
+</script>
+{% endblock %} 

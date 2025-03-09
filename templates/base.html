@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}燃料结算系统{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="bi bi-lightning-charge-fill me-2"></i>燃料结算系统
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">首页</a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="supplierDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            供应商管理
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="supplierDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('suppliers.index') }}">供应商列表</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('suppliers.create') }}">添加供应商</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="contractDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            燃料合同管理
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="contractDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('contracts.index') }}">合同列表</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('contracts.create') }}">添加合同</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="mineDeliveryDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            燃料矿发管理
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="mineDeliveryDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('mine_deliveries.index') }}">矿发列表</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('mine_deliveries.create') }}">添加矿发</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="transportationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            燃料拉运管理
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="transportationDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('transportation.index') }}">拉运列表</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('transportation.create') }}">添加拉运</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('transportation.summary') }}">拉运汇总</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="arrivalDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            燃料到厂管理
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="arrivalDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('arrivals.index') }}">到厂列表</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('arrivals.create') }}">添加到厂</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('export_data') }}">导出数据</a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.logout') }}">退出登录</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">登录</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="row">
+            <div class="col-md-12">
+                {% for message in messages %}
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <div class="col-md-12">
+                <h1 class="mb-4">{% block page_title %}{% endblock %}</h1>
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer mt-5 py-3 bg-light">
+        <div class="container text-center">
+            <span class="text-muted">© 2023 燃料结算系统 | 电厂燃料管理部门</span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html> 

@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+
+{% block title %}编辑燃料合同 - 燃料结算系统{% endblock %}
+
+{% block page_title %}编辑燃料合同{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" action="{{ url_for('contracts.edit', id=contract.id) }}" id="contractForm">
+                    {{ form.hidden_tag() }}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.contract_date.label(class="form-label") }}
+                            {{ form.contract_date(class="form-control", type="text", inputmode="numeric", pattern="[0-9]{4}-[0-9]{2}", placeholder="YYYY-MM", maxlength="7", id="contractDate") }}
+                            {% for error in form.contract_date.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.contract_name.label(class="form-label") }}
+                            {{ form.contract_name(class="form-control", id="contract_name") }}
+                            {% for error in form.contract_name.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.supplier_id.label(class="form-label") }}
+                            {{ form.supplier_id(class="form-select") }}
+                            {% for error in form.supplier_id.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.contract_type.label(class="form-label") }}
+                            {{ form.contract_type(class="form-select", id="contractType") }}
+                            {% for error in form.contract_type.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.mine_calorific_value.label(class="form-label") }}
+                            {{ form.mine_calorific_value(class="form-control", id="calorificValue") }}
+                            {% for error in form.mine_calorific_value.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.mine_unit_price.label(class="form-label") }}
+                            {{ form.mine_unit_price(class="form-control", id="unitPrice") }}
+                            <small class="form-text text-muted">根据合同类型和热值自动计算，也可手动输入</small>
+                            {% for error in form.mine_unit_price.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('contracts.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>返回
+                        </a>
+                        <button type="button" id="calculateBtn" class="btn btn-outline-primary me-2">
+                            <i class="bi bi-calculator me-2"></i>计算单价
+                        </button>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const contractType = document.getElementById('contractType');
+        const calorificValue = document.getElementById('calorificValue');
+        const unitPrice = document.getElementById('unitPrice');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const contractName = document.getElementById('contract_name');
+        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+        const contractDate = document.getElementById('contractDate');
+        
+        // 日期输入格式化
+        if (contractDate) {
+            // 确保日期格式正确
+            if (contractDate.value) {
+                // 如果已有值，确保格式为 YYYY-MM
+                const value = contractDate.value;
+                const regex = /^(\d{4})-(\d{2})$/;
+                
+                if (!regex.test(value)) {
+                    // 尝试转换为正确格式
+                    try {
+                        const date = new Date(value);
+                        const year = date.getFullYear();
+                        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                        contractDate.value = `${year}-${month}`;
+                    } catch (e) {
+                        console.error('日期格式转换失败:', e);
+                    }
+                }
+            }
+            
+            // 监听输入，自动添加连字符
+            contractDate.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, ''); // 只保留数字
+                
+                if (value.length > 4) {
+                    value = value.substring(0, 4) + '-' + value.substring(4, 6);
+                }
+                
+                e.target.value = value;
+            });
+            
+            // 失去焦点时验证格式
+            contractDate.addEventListener('blur', function(e) {
+                const value = e.target.value;
+                const regex = /^(\d{4})-(\d{2})$/;
+                
+                if (value && !regex.test(value)) {
+                    alert('请使用YYYY-MM格式输入日期，例如：2023-01');
+                    return;
+                }
+                
+                if (value) {
+                    const matches = value.match(regex);
+                    const year = parseInt(matches[1]);
+                    const month = parseInt(matches[2]);
+                    
+                    if (year < 2000 || year > 2100 || month < 1 || month > 12) {
+                        alert('请输入有效的年月，年份在2000-2100之间，月份在1-12之间');
+                        const now = new Date();
+                        const currentYear = now.getFullYear();
+                        const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
+                        e.target.value = `${currentYear}-${currentMonth}`;
+                    }
+                }
+            });
+        }
+        
+        // 添加调试信息
+        console.log('编辑页面 DOM 加载完成，已获取元素:');
+        console.log('contractType:', contractType);
+        console.log('calorificValue:', calorificValue);
+        console.log('unitPrice:', unitPrice);
+        console.log('calculateBtn:', calculateBtn);
+        console.log('contractName:', contractName);
+        console.log('contractDate:', contractDate);
+        console.log('CSRF Token:', csrfToken);
+        
+        // 自动计算函数
+        function calculatePrice() {
+            console.log('自动计算单价');
+            console.log('合同类型:', contractType.value);
+            console.log('热值:', calorificValue.value);
+            console.log('合同名称:', contractName ? contractName.value : 'undefined');
+            
+            if (!contractType.value || !calorificValue.value) {
+                console.log('合同类型或热值未填写，不计算单价');
+                return;
+            }
+            
+            const requestData = {
+                'contract_type': contractType.value,
+                'calorific_value': calorificValue.value,
+                'contract_name': contractName ? contractName.value : '',
+                'csrf_token': csrfToken
+            };
+            
+            console.log('发送请求数据:', requestData);
+            console.log('请求URL:', '{{ url_for("contracts.calculate_price") }}');
+            
+            fetch('{{ url_for("contracts.calculate_price") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken
+                },
+                body: new URLSearchParams(requestData)
+            })
+            .then(response => {
+                console.log('收到响应:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('解析的数据:', data);
+                if (data.price) {
+                    unitPrice.value = data.price.toFixed(2);
+                    console.log('设置单价为:', data.price.toFixed(2));
+                } else {
+                    console.log('没有价格数据，需要手动输入');
+                    unitPrice.placeholder = "请手动输入单价";
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                unitPrice.placeholder = "计算出错，请手动输入";
+            });
+        }
+        
+        // 热值输入后自动计算单价
+        calorificValue.addEventListener('input', debounce(function() {
+            if (this.value && contractType.value) {
+                calculatePrice();
+            }
+        }, 500));
+        
+        // 合同类型变化后，如果热值已填写，自动计算单价
+        contractType.addEventListener('change', function() {
+            if (this.value && calorificValue.value) {
+                calculatePrice();
+            }
+        });
+        
+        // 保留计算按钮功能
+        calculateBtn.addEventListener('click', function() {
+            if (!contractType.value || !calorificValue.value) {
+                alert('请先选择合同类型并输入热值');
+                return;
+            }
+            calculatePrice();
+        });
+        
+        // 防抖函数，避免频繁计算
+        function debounce(func, wait) {
+            let timeout;
+            return function() {
+                const context = this;
+                const args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(function() {
+                    func.apply(context, args);
+                }, wait);
+            };
+        }
+        
+        // 如果页面加载时已有热值和合同类型，自动计算单价
+        if (calorificValue.value && contractType.value) {
+            calculatePrice();
+        }
+    });
+</script>
+{% endblock %} 

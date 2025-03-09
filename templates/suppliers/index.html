@@ -1,0 +1,396 @@
+{% extends 'base.html' %}
+
+{% block title %}供应商管理 - 燃料结算系统{% endblock %}
+
+{% block page_title %}供应商管理{% endblock %}
+
+{% block styles %}
+<style>
+    /* 表格样式 */
+    #suppliersTable th {
+        position: relative;
+        padding-right: 25px;
+        white-space: nowrap;
+    }
+    
+    .sort-icon {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0.3;
+        transition: opacity 0.2s;
+    }
+    
+    th[data-sort]:hover .sort-icon {
+        opacity: 0.7;
+    }
+    
+    th.sort-asc .sort-icon, th.sort-desc .sort-icon {
+        opacity: 1;
+    }
+    
+    /* 筛选区域样式 */
+    .filter-section {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    /* 高亮匹配文本 */
+    .highlight {
+        background-color: #ffff99;
+        padding: 2px;
+        border-radius: 2px;
+    }
+    
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+        .filter-controls {
+            flex-direction: column;
+        }
+        
+        .filter-controls > div {
+            margin-bottom: 10px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <a href="{{ url_for('suppliers.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>添加供应商
+        </a>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{{ url_for('export_data') }}" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel me-2"></i>导出数据
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <!-- 筛选区域 -->
+        <div class="filter-section">
+            <div class="row mb-2">
+                <div class="col-md-12">
+                    <h6><i class="bi bi-funnel me-2"></i>筛选与排序</h6>
+                    <small class="text-muted">可以通过关键字搜索或点击表头排序</small>
+                </div>
+            </div>
+            <div class="row filter-controls">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" id="tableSearch" class="form-control" placeholder="输入关键字进行搜索...">
+                        <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                            <i class="bi bi-x-circle"></i> 清除
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-outline-secondary btn-sm" id="resetSort">
+                            <i class="bi bi-arrow-repeat"></i> 重置排序
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-12">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="filterAll" checked>
+                        <label class="form-check-label" for="filterAll">全部列</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input filter-column" type="checkbox" data-column="1" checked>
+                        <label class="form-check-label">供应商简称</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input filter-column" type="checkbox" data-column="2" checked>
+                        <label class="form-check-label">供应商全称</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input filter-column" type="checkbox" data-column="3" checked>
+                        <label class="form-check-label">所属类型</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2" id="searchStats" style="display: none;">
+                <div class="col-md-12">
+                    <small class="text-muted">
+                        找到 <span id="matchCount">0</span> 条匹配记录，共 <span id="totalCount">0</span> 条记录
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover" id="suppliersTable">
+                <thead>
+                    <tr>
+                        <th data-sort="number">ID <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                        <th data-sort="string">供应商简称 <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                        <th data-sort="string">供应商全称 <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                        <th data-sort="string">所属类型 <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                        <th data-sort="string">二级单位 <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for supplier in suppliers %}
+                    <tr>
+                        <td>{{ supplier.id }}</td>
+                        <td>{{ supplier.short_name }}</td>
+                        <td>{{ supplier.full_name }}</td>
+                        <td>{{ supplier.supplier_type }}</td>
+                        <td>{{ supplier.secondary_unit }}</td>
+                        <td>
+                            <a href="{{ url_for('suppliers.edit', id=supplier.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> 编辑
+                            </a>
+                            <a href="{{ url_for('suppliers.delete', id=supplier.id) }}" class="btn btn-sm btn-outline-danger" onclick="confirmDelete(event, '供应商')">
+                                <i class="bi bi-trash"></i> 删除
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">暂无供应商数据</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function confirmDelete(event, itemType) {
+        if (!confirm(`确定要删除这个${itemType}吗？此操作不可撤销。`)) {
+            event.preventDefault();
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('suppliersTable');
+        const tableBody = table.querySelector('tbody');
+        const rows = Array.from(tableBody.querySelectorAll('tr'));
+        const searchInput = document.getElementById('tableSearch');
+        const clearSearchBtn = document.getElementById('clearSearch');
+        const resetSortBtn = document.getElementById('resetSort');
+        const filterAllCheckbox = document.getElementById('filterAll');
+        const filterColumnCheckboxes = document.querySelectorAll('.filter-column');
+        const sortHeaders = table.querySelectorAll('th[data-sort]');
+        const searchStats = document.getElementById('searchStats');
+        const matchCount = document.getElementById('matchCount');
+        const totalCount = document.getElementById('totalCount');
+        
+        let currentSortColumn = null;
+        let currentSortDirection = 'asc';
+        
+        // 初始化统计数据
+        totalCount.textContent = rows.length;
+        
+        // 筛选功能
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const columnsToSearch = [];
+            let visibleCount = 0;
+            
+            // 移除之前的高亮
+            rows.forEach(row => {
+                Array.from(row.cells).forEach(cell => {
+                    cell.innerHTML = cell.innerHTML.replace(/<mark class="highlight">|<\/mark>/g, '');
+                });
+            });
+            
+            if (filterAllCheckbox.checked) {
+                // 搜索所有列
+                rows.forEach(row => {
+                    let rowVisible = false;
+                    
+                    if (searchTerm === '') {
+                        rowVisible = true;
+                    } else {
+                        Array.from(row.cells).forEach(cell => {
+                            if (cell.textContent.toLowerCase().includes(searchTerm)) {
+                                // 高亮匹配文本
+                                cell.innerHTML = cell.innerHTML.replace(
+                                    new RegExp(searchTerm, 'gi'),
+                                    match => `<mark class="highlight">${match}</mark>`
+                                );
+                                rowVisible = true;
+                            }
+                        });
+                    }
+                    
+                    row.style.display = rowVisible ? '' : 'none';
+                    if (rowVisible) visibleCount++;
+                });
+            } else {
+                // 只搜索选中的列
+                filterColumnCheckboxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        columnsToSearch.push(parseInt(checkbox.dataset.column));
+                    }
+                });
+                
+                rows.forEach(row => {
+                    let rowVisible = false;
+                    
+                    if (searchTerm === '') {
+                        rowVisible = true;
+                    } else {
+                        columnsToSearch.forEach(colIndex => {
+                            const cell = row.cells[colIndex];
+                            if (cell && cell.textContent.toLowerCase().includes(searchTerm)) {
+                                // 高亮匹配文本
+                                cell.innerHTML = cell.innerHTML.replace(
+                                    new RegExp(searchTerm, 'gi'),
+                                    match => `<mark class="highlight">${match}</mark>`
+                                );
+                                rowVisible = true;
+                            }
+                        });
+                    }
+                    
+                    row.style.display = rowVisible ? '' : 'none';
+                    if (rowVisible) visibleCount++;
+                });
+            }
+            
+            // 更新统计信息
+            matchCount.textContent = visibleCount;
+            searchStats.style.display = searchTerm ? 'block' : 'none';
+            
+            // 检查是否有可见行
+            if (visibleCount === 0 && rows.length > 0) {
+                // 如果没有匹配的行，显示"无匹配数据"行
+                let noMatchRow = tableBody.querySelector('.no-match-row');
+                if (!noMatchRow) {
+                    noMatchRow = document.createElement('tr');
+                    noMatchRow.className = 'no-match-row';
+                    const cell = document.createElement('td');
+                    cell.colSpan = 6;
+                    cell.className = 'text-center text-muted';
+                    cell.textContent = '没有匹配的数据';
+                    noMatchRow.appendChild(cell);
+                    tableBody.appendChild(noMatchRow);
+                }
+                noMatchRow.style.display = '';
+            } else {
+                // 如果有匹配的行，隐藏"无匹配数据"行
+                const noMatchRow = tableBody.querySelector('.no-match-row');
+                if (noMatchRow) {
+                    noMatchRow.style.display = 'none';
+                }
+            }
+        }
+        
+        // 排序功能
+        function sortTable(columnIndex, sortType) {
+            const header = sortHeaders[columnIndex];
+            
+            // 更新排序方向
+            if (currentSortColumn === columnIndex) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortDirection = 'asc';
+                if (currentSortColumn !== null) {
+                    sortHeaders[currentSortColumn].classList.remove('sort-asc', 'sort-desc');
+                }
+            }
+            
+            currentSortColumn = columnIndex;
+            
+            // 更新排序图标
+            header.classList.remove('sort-asc', 'sort-desc');
+            header.classList.add(currentSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+            
+            // 排序行
+            rows.sort((a, b) => {
+                let aValue = a.cells[columnIndex].textContent.trim();
+                let bValue = b.cells[columnIndex].textContent.trim();
+                
+                if (sortType === 'number') {
+                    // 移除非数字字符（如逗号、货币符号等）
+                    aValue = parseFloat(aValue.replace(/[^\d.-]/g, '')) || 0;
+                    bValue = parseFloat(bValue.replace(/[^\d.-]/g, '')) || 0;
+                    
+                    return currentSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+                } else {
+                    // 字符串排序
+                    return currentSortDirection === 'asc' 
+                        ? aValue.localeCompare(bValue, 'zh-CN') 
+                        : bValue.localeCompare(aValue, 'zh-CN');
+                }
+            });
+            
+            // 重新排列行
+            rows.forEach(row => tableBody.appendChild(row));
+            
+            // 保持筛选状态
+            filterTable();
+        }
+        
+        // 重置排序
+        function resetSort() {
+            if (currentSortColumn !== null) {
+                sortHeaders[currentSortColumn].classList.remove('sort-asc', 'sort-desc');
+                currentSortColumn = null;
+                
+                // 恢复原始顺序
+                rows.sort((a, b) => {
+                    const aId = parseInt(a.cells[0].textContent);
+                    const bId = parseInt(b.cells[0].textContent);
+                    return aId - bId;
+                });
+                
+                // 重新排列行
+                rows.forEach(row => tableBody.appendChild(row));
+                
+                // 保持筛选状态
+                filterTable();
+            }
+        }
+        
+        // 事件监听器
+        searchInput.addEventListener('input', filterTable);
+        
+        clearSearchBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            filterTable();
+        });
+        
+        resetSortBtn.addEventListener('click', resetSort);
+        
+        filterAllCheckbox.addEventListener('change', function() {
+            filterColumnCheckboxes.forEach(checkbox => {
+                checkbox.disabled = this.checked;
+            });
+            filterTable();
+        });
+        
+        filterColumnCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', filterTable);
+        });
+        
+        sortHeaders.forEach((header, index) => {
+            header.addEventListener('click', function() {
+                const sortType = this.dataset.sort;
+                sortTable(index, sortType);
+            });
+        });
+        
+        // 初始化
+        filterTable();
+    });
+</script>
+{% endblock %} 

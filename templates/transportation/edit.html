@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}编辑燃料拉运记录 - 燃料结算系统{% endblock %}
+
+{% block page_title %}编辑燃料拉运记录{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" action="{{ url_for('transportation.edit', id=transportation.id) }}" id="transportationForm">
+                    {{ form.hidden_tag() }}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.transport_date.label(class="form-label") }}
+                            {{ form.transport_date(class="form-control", id="transportDate") }}
+                            {% for error in form.transport_date.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.fuel_contract_id.label(class="form-label") }}
+                            {{ form.fuel_contract_id(class="form-select", id="fuelContractId") }}
+                            {% for error in form.fuel_contract_id.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.transport_type.label(class="form-label") }}
+                            {{ form.transport_type(class="form-select", id="transportType") }}
+                            {% for error in form.transport_type.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.transport_unit_price.label(class="form-label") }}
+                            {{ form.transport_unit_price(class="form-control", id="transportUnitPrice") }}
+                            {% for error in form.transport_unit_price.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.transport_location.label(class="form-label") }}
+                            {{ form.transport_location(class="form-control", id="transportLocation") }}
+                            {% for error in form.transport_location.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.transport_contract.label(class="form-label") }}
+                            {{ form.transport_contract(class="form-control", id="transportContract") }}
+                            {% for error in form.transport_contract.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.transportation_unit_price.label(class="form-label") }}
+                            {{ form.transportation_unit_price(class="form-control", id="transportationUnitPrice") }}
+                            {% for error in form.transportation_unit_price.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.transport_quantity.label(class="form-label") }}
+                            {{ form.transport_quantity(class="form-control", id="transportQuantity") }}
+                            {% for error in form.transport_quantity.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <div class="alert alert-info" id="transportationAmountInfo">
+                                <strong>运输金额：</strong> <span id="transportationAmountValue">{{ "%.2f"|format(transportation.transportation_amount) }}</span> 元
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('transportation.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>返回
+                        </a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const transportationUnitPrice = document.getElementById('transportationUnitPrice');
+        const transportQuantity = document.getElementById('transportQuantity');
+        const transportationAmountInfo = document.getElementById('transportationAmountInfo');
+        const transportationAmountValue = document.getElementById('transportationAmountValue');
+        const form = document.getElementById('transportationForm');
+        
+        // 当单价或数量变化时，计算运输金额
+        transportationUnitPrice.addEventListener('input', calculateTransportationAmount);
+        transportQuantity.addEventListener('input', calculateTransportationAmount);
+        
+        // 计算运输金额
+        function calculateTransportationAmount() {
+            const unitPrice = parseFloat(transportationUnitPrice.value) || 0;
+            const quantity = parseFloat(transportQuantity.value) || 0;
+            
+            if (unitPrice > 0 && quantity > 0) {
+                const amount = unitPrice * quantity;
+                // 使用会计计数法显示运输金额
+                transportationAmountValue.textContent = formatCurrency(amount);
+                transportationAmountInfo.style.display = 'block';
+            } else {
+                transportationAmountInfo.style.display = 'none';
+            }
+        }
+        
+        // 使用会计计数法格式化金额
+        function formatCurrency(amount) {
+            // 保留两位小数
+            const fixedAmount = amount.toFixed(2);
+            // 分割整数部分和小数部分
+            const parts = fixedAmount.split('.');
+            // 对整数部分每三位添加逗号
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            // 重新组合
+            return parts.join('.');
+        }
+        
+        // 页面加载时，使用会计计数法格式化初始运输金额
+        if (transportationAmountValue.textContent) {
+            const initialAmount = parseFloat(transportationAmountValue.textContent);
+            if (!isNaN(initialAmount)) {
+                transportationAmountValue.textContent = formatCurrency(initialAmount);
+            }
+        }
+        
+        // 表单提交前验证
+        form.addEventListener('submit', function(event) {
+            // 检查日期是否已填写
+            if (!document.getElementById('transportDate').value) {
+                event.preventDefault();
+                alert('请选择承运日期');
+                document.getElementById('transportDate').focus();
+                return;
+            }
+            
+            // 检查合同是否已选择
+            if (!document.getElementById('fuelContractId').value) {
+                event.preventDefault();
+                alert('请选择燃料合同');
+                document.getElementById('fuelContractId').focus();
+                return;
+            }
+            
+            // 检查拉运类型是否已选择
+            if (!document.getElementById('transportType').value) {
+                event.preventDefault();
+                alert('请选择拉运类型');
+                document.getElementById('transportType').focus();
+                return;
+            }
+            
+            // 检查拉运单价是否已填写
+            if (!transportationUnitPrice.value) {
+                event.preventDefault();
+                alert('请输入运输单价');
+                transportationUnitPrice.focus();
+                return;
+            }
+            
+            // 检查拉运数量是否已填写
+            if (!transportQuantity.value) {
+                event.preventDefault();
+                alert('请输入拉运数量');
+                transportQuantity.focus();
+                return;
+            }
+        });
+    });
+</script>
+{% endblock %} 
