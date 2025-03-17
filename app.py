@@ -1,8 +1,6 @@
 import os
 from flask import Flask, render_template, redirect, url_for, flash, request, send_file
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_login import LoginManager, current_user
+from extensions import db, migrate, login_manager
 from datetime import datetime
 from sqlalchemy import func
 import pandas as pd
@@ -14,11 +12,10 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-for-testing')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///fuel_settlement.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Initialize extensions
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-login_manager = LoginManager(app)
-login_manager.login_view = 'auth.login'
+# Initialize extensions with app
+db.init_app(app)
+migrate.init_app(app, db)
+login_manager.init_app(app)
 
 # Import models after initializing db to avoid circular imports
 from models import User, Supplier, FuelContract, FuelMineDelivery, FuelTransportation, FuelArrival

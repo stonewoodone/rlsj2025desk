@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required
-from app import db
+from extensions import db
 from models import FuelContract, Supplier
 from forms import FuelContractForm
 from datetime import datetime
@@ -17,6 +17,13 @@ def index():
 @login_required
 def create():
     form = FuelContractForm()
+    # 填充供应商下拉框
+    form.supplier_id.choices = [(s.id, s.short_name) for s in Supplier.query.order_by(Supplier.short_name).all()]
+    
+    if request.method == 'GET':
+        # 设置默认值
+        form.transport_type.data = '汽运'  # 默认为汽运
+    
     if form.validate_on_submit():
         try:
             # Calculate mine unit price based on contract type and calorific value
@@ -26,13 +33,31 @@ def create():
                 form.contract_name.data
             )
             
+            # 根据供应商设置默认的拉运类型
+            supplier = Supplier.query.get(form.supplier_id.data)
+            transport_type = form.transport_type.data
+            
+            # 如果用户没有手动修改拉运类型，则根据供应商自动设置
+            if supplier:
+                supplier_name = supplier.short_name
+                # 汽运供应商
+                if supplier_name in ['富康源', '华泓', '焦煤物流', '金辛达', '晋牛', '三交河', '山凹', '四明山', '雪坪', '野川']:
+                    transport_type = '汽运'
+                # 火车直发供应商
+                elif supplier_name in ['小峪', '龙泉', '炉峪口']:
+                    transport_type = '火车直发'
+                # 火车短倒供应商
+                elif supplier_name in ['北辛窑', '莲盛']:
+                    transport_type = '火车短倒'
+            
             contract = FuelContract(
                 contract_date=form.contract_date.data,
                 contract_name=form.contract_name.data,
                 contract_type=form.contract_type.data,
                 mine_calorific_value=form.mine_calorific_value.data,
                 mine_unit_price=mine_unit_price if mine_unit_price else form.mine_unit_price.data,
-                supplier_id=form.supplier_id.data
+                supplier_id=form.supplier_id.data,
+                transport_type=transport_type
             )
             db.session.add(contract)
             db.session.commit()
@@ -49,6 +74,9 @@ def create():
 def edit(id):
     contract = FuelContract.query.get_or_404(id)
     form = FuelContractForm(obj=contract)
+    # 填充供应商下拉框
+    form.supplier_id.choices = [(s.id, s.short_name) for s in Supplier.query.order_by(Supplier.short_name).all()]
+    
     if form.validate_on_submit():
         try:
             # Calculate mine unit price based on contract type and calorific value
@@ -58,12 +86,30 @@ def edit(id):
                 form.contract_name.data
             )
             
+            # 根据供应商设置默认的拉运类型
+            supplier = Supplier.query.get(form.supplier_id.data)
+            transport_type = form.transport_type.data
+            
+            # 如果用户没有手动修改拉运类型，则根据供应商自动设置
+            if supplier and contract.supplier_id != form.supplier_id.data:
+                supplier_name = supplier.short_name
+                # 汽运供应商
+                if supplier_name in ['富康源', '华泓', '焦煤物流', '金辛达', '晋牛', '三交河', '山凹', '四明山', '雪坪', '野川']:
+                    transport_type = '汽运'
+                # 火车直发供应商
+                elif supplier_name in ['小峪', '龙泉', '炉峪口']:
+                    transport_type = '火车直发'
+                # 火车短倒供应商
+                elif supplier_name in ['北辛窑', '莲盛']:
+                    transport_type = '火车短倒'
+            
             contract.contract_date = form.contract_date.data
             contract.contract_name = form.contract_name.data
             contract.contract_type = form.contract_type.data
             contract.mine_calorific_value = form.mine_calorific_value.data
             contract.mine_unit_price = mine_unit_price if mine_unit_price else form.mine_unit_price.data
             contract.supplier_id = form.supplier_id.data
+            contract.transport_type = transport_type
             db.session.commit()
             flash('燃料合同更新成功！')
             return redirect(url_for('contracts.index'))

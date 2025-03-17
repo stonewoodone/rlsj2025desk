@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required
-from app import db
+from extensions import db
 from models import FuelMineDelivery, FuelContract, Supplier
 from forms import FuelMineDeliveryForm
+from sqlalchemy import func
 
 mine_deliveries_bp = Blueprint('mine_deliveries', __name__, url_prefix='/mine_deliveries')
 

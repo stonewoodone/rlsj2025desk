@@ -1,4 +1,4 @@
-from extensions import db
+from app import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
@@ -35,7 +35,6 @@ class FuelContract(db.Model):
     mine_calorific_value = db.Column(db.Float)  # 矿发热值
     mine_unit_price = db.Column(db.Float)  # 矿发单价
     supplier_id = db.Column(db.Integer, db.ForeignKey('supplier.id'))
-    transport_type = db.Column(db.String(64))  # 拉运类型：汽运、火车短倒、火车直发
     
     # Relationships
     fuel_mine_deliveries = db.relationship('FuelMineDelivery', backref='fuel_contract', lazy='dynamic')
@@ -149,7 +148,7 @@ class FuelArrival(db.Model):
             return
             
         # Get the total transportation amount for this contract
-        from extensions import db
+        from app import db
         
         total_transport_amount = db.session.query(func.sum(FuelTransportation.transportation_amount))\
             .filter(FuelTransportation.fuel_contract_id == self.fuel_contract_id)\

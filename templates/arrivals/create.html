@@ -15,7 +15,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 {{ form.arrival_date.label(class="form-label") }}
-                                {{ form.arrival_date(class="form-control", type="month") }}
+                                {{ form.arrival_date(class="form-control") }}
                                 {% if form.arrival_date.errors %}
                                 <div class="invalid-feedback d-block">
                                     {% for error in form.arrival_date.errors %}
@@ -161,6 +161,10 @@
                 .then(response => response.json())
                 .then(data => {
                     contractType.value = data.contract_type;
+                    // 设置拉运类型
+                    if (data.transport_type) {
+                        transportType.value = data.transport_type;
+                    }
                     calculateValues();
                 })
                 .catch(error => {

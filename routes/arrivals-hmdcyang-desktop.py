@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required
-from extensions import db
+from app import db
 from models import FuelArrival, FuelContract, FuelTransportation
 from forms import FuelArrivalForm
 from sqlalchemy import func
@@ -17,8 +17,8 @@ def index():
 @login_required
 def create():
     form = FuelArrivalForm()
-    # 填充合同选择下拉框，按合同名称排序
-    form.fuel_contract_id.choices = [(c.id, c.contract_name) for c in FuelContract.query.order_by(FuelContract.contract_name).all()]
+    # 填充合同选择下拉框
+    form.fuel_contract_id.choices = [(c.id, c.contract_name) for c in FuelContract.query.all()]
     
     if form.validate_on_submit():
         # 确保日期格式正确
@@ -73,8 +73,6 @@ def create():
 def edit(id):
     arrival = FuelArrival.query.get_or_404(id)
     form = FuelArrivalForm(obj=arrival)
-    # 填充合同选择下拉框，按合同名称排序
-    form.fuel_contract_id.choices = [(c.id, c.contract_name) for c in FuelContract.query.order_by(FuelContract.contract_name).all()]
     
     if form.validate_on_submit():
         try:
@@ -139,6 +137,5 @@ def get_contract_details(contract_id):
     
     return jsonify({
         'contract_type': contract.contract_type,
-        'total_transport_amount': total_transport_amount,
-        'transport_type': contract.transport_type or '汽运'  # 如果为空，默认为汽运
+        'total_transport_amount': total_transport_amount
     }) 

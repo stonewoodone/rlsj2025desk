@@ -58,9 +58,14 @@ class FuelContractForm(FlaskForm):
         ('地方长协', '地方长协'),
         ('焦煤贸易', '焦煤贸易')
     ], validators=[DataRequired()])
-    mine_calorific_value = FloatField('矿发热值', validators=[DataRequired()])
-    mine_unit_price = FloatField('矿发单价', validators=[Optional()])
     supplier_id = SelectField('供应商', coerce=int, validators=[DataRequired()])
+    mine_calorific_value = FloatField('矿发热值', validators=[DataRequired()])
+    mine_unit_price = FloatField('矿发单价', validators=[DataRequired()])
+    transport_type = SelectField('拉运类型', choices=[
+        ('汽运', '汽运'),
+        ('火车短倒', '火车短倒'),
+        ('火车直发', '火车直发')
+    ], validators=[DataRequired()])
     submit = SubmitField('提交')
     
     def __init__(self, *args, **kwargs):
@@ -130,15 +135,13 @@ class FuelTransportationForm(FlaskForm):
             raise ValidationError('请选择燃料合同')
 
 class FuelArrivalForm(FlaskForm):
-    arrival_date = DateField('到厂日期', format='%Y-%m', validators=[DataRequired()])
-    fuel_contract_id = SelectField('燃料合同名称', coerce=int, validators=[DataRequired()])
+    arrival_date = DateField('到厂日期', format='%Y-%m', validators=[DataRequired()], render_kw={"placeholder": "YYYY-MM"})
+    fuel_contract_id = SelectField('燃料合同', coerce=int, validators=[DataRequired()])
     arrival_quantity = FloatField('到厂数量', validators=[DataRequired()])
     arrival_calorific_value = FloatField('到厂热值', validators=[DataRequired()])
-    transport_type = SelectField('拉运类型', choices=[
-        ('汽运', '汽运'),
-        ('火车短倒', '火车短倒'),
-        ('火车直发', '火车直发')
-    ], validators=[DataRequired()])
+    transport_type = SelectField('拉运类型', 
+                                choices=[('汽运', '汽运'), ('火车短倒', '火车短倒'), ('火车直发', '火车直发')],
+                                validators=[DataRequired()])
     submit = SubmitField('提交')
     
     def __init__(self, *args, **kwargs):

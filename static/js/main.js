@@ -163,10 +163,85 @@ function setupTransportQuantity() {
     }
 }
 
+// 处理日期输入格式
+function setupDateInputs() {
+    // 选择所有日期输入框，包括DateField类型的输入框
+    const dateInputs = document.querySelectorAll('input[data-date-format], input[type="date"], input[type="month"]');
+    dateInputs.forEach(input => {
+        // 设置输入框类型为text，以便自定义格式
+        if (input.type !== 'text') {
+            input.type = 'text';
+        }
+        
+        // 格式化已有的日期值为yyyy-mm格式
+        if(input.value) {
+            const date = new Date(input.value);
+            if(!isNaN(date.getTime())) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                input.value = `${year}-${month}`;
+            }
+        }
+        
+        // 添加placeholder提示
+        if (!input.placeholder) {
+            input.placeholder = 'YYYY-MM';
+        }
+        
+        // 添加输入验证
+        input.addEventListener('input', function() {
+            // 允许用户输入年份和月份，格式为YYYY-MM
+            let value = this.value.replace(/[^0-9-]/g, '');
+            
+            // 如果输入了分隔符，确保只有一个
+            const parts = value.split('-');
+            if (parts.length > 2) {
+                value = parts[0] + '-' + parts.slice(1).join('');
+            }
+            
+            // 限制年份为4位数
+            if (parts[0] && parts[0].length > 4) {
+                parts[0] = parts[0].substring(0, 4);
+                value = parts.join('-');
+            }
+            
+            // 限制月份为2位数
+            if (parts[1] && parts[1].length > 2) {
+                parts[1] = parts[1].substring(0, 2);
+                value = parts.join('-');
+            }
+            
+            this.value = value;
+        });
+        
+        // 添加失去焦点时的验证
+        input.addEventListener('blur', function() {
+            const value = this.value;
+            if (!value) return;
+            
+            const parts = value.split('-');
+            if (parts.length !== 2) return;
+            
+            const year = parseInt(parts[0], 10);
+            let month = parseInt(parts[1], 10);
+            
+            // 验证年份和月份
+            if (isNaN(year) || isNaN(month) || year < 1900 || year > 2100 || month < 1 || month > 12) {
+                return;
+            }
+            
+            // 格式化为YYYY-MM
+            month = String(month).padStart(2, '0');
+            this.value = `${year}-${month}`;
+        });
+    });
+}
+
 // Initialize all form handlers
 document.addEventListener('DOMContentLoaded', function() {
     updateContractName();
     setupPriceCalculation();
     setupContractDetails();
     setupTransportQuantity();
+    setupDateInputs();
 }); 

@@ -60,6 +60,16 @@
                             {% endfor %}
                         </div>
                     </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.transport_type.label(class="form-label") }}
+                            {{ form.transport_type(class="form-select", id="transportType") }}
+                            <small class="form-text text-muted">根据供应商自动设置，也可手动选择</small>
+                            {% for error in form.transport_type.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
                     <div class="d-flex justify-content-between">
                         <a href="{{ url_for('contracts.index') }}" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left me-2"></i>返回
@@ -86,6 +96,28 @@
         const contractName = document.getElementById('contract_name');
         const csrfToken = document.querySelector('input[name="csrf_token"]').value;
         const contractDate = document.getElementById('contractDate');
+        const supplierSelect = document.getElementById('supplier_id');
+        const transportType = document.getElementById('transportType');
+        
+        // 供应商变更时自动设置拉运类型
+        if (supplierSelect && transportType) {
+            supplierSelect.addEventListener('change', function() {
+                const supplierName = supplierSelect.options[supplierSelect.selectedIndex].text;
+                
+                // 汽运供应商
+                if (['富康源', '华泓', '焦煤物流', '金辛达', '晋牛', '三交河', '山凹', '四明山', '雪坪', '野川'].includes(supplierName)) {
+                    transportType.value = '汽运';
+                }
+                // 火车直发供应商
+                else if (['小峪', '龙泉', '炉峪口'].includes(supplierName)) {
+                    transportType.value = '火车直发';
+                }
+                // 火车短倒供应商
+                else if (['北辛窑', '莲盛'].includes(supplierName)) {
+                    transportType.value = '火车短倒';
+                }
+            });
+        }
         
         // 日期输入格式化
         if (contractDate) {
