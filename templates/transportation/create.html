@@ -60,6 +60,15 @@
                         </div>
                     </div>
                     <div class="row mb-3">
+                        <div class="col-md-12">
+                            {{ form.transport_company.label(class="form-label") }}
+                            {{ form.transport_company(class="form-control", id="transportCompany") }}
+                            {% for error in form.transport_company.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
                         <div class="col-md-6">
                             {{ form.transportation_unit_price.label(class="form-label") }}
                             {{ form.transportation_unit_price(class="form-control", id="transportationUnitPrice") }}

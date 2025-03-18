@@ -121,6 +121,7 @@ class FuelTransportationForm(FlaskForm):
     transport_unit_price = FloatField('拉运单价', validators=[DataRequired()])
     transport_location = StringField('拉运地点', validators=[DataRequired()])
     transport_contract = StringField('拉运合同', validators=[DataRequired()])
+    transport_company = StringField('拉运单位', validators=[DataRequired()])
     transportation_unit_price = FloatField('运输单价', validators=[DataRequired()])
     transport_quantity = FloatField('拉运数量', validators=[DataRequired()])
     submit = SubmitField('提交')

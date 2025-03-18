@@ -32,6 +32,7 @@
                         <th>拉运单价</th>
                         <th>拉运地点</th>
                         <th>拉运合同</th>
+                        <th>拉运单位</th>
                         <th>运输单价</th>
                         <th>拉运数量</th>
                         <th>运输金额</th>
@@ -47,6 +48,7 @@
                         <td>{{ "%.2f"|format(transportation.transport_unit_price) }}</td>
                         <td>{{ transportation.transport_location }}</td>
                         <td>{{ transportation.transport_contract }}</td>
+                        <td>{{ transportation.transport_company }}</td>
                         <td>{{ "%.2f"|format(transportation.transportation_unit_price) }}</td>
                         <td>{{ transportation.transport_quantity }}</td>
                         <td>{{ "{:,.2f}".format(transportation.transportation_amount) }}</td>

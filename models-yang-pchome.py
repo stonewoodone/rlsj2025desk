@@ -35,7 +35,6 @@ class FuelContract(db.Model):
     mine_calorific_value = db.Column(db.Float)  # 矿发热值
     mine_unit_price = db.Column(db.Float)  # 矿发单价
     supplier_id = db.Column(db.Integer, db.ForeignKey('supplier.id'))
-    transport_type = db.Column(db.String(64))  # 拉运类型：汽运、火车短倒、火车直发
     
     # Relationships
     fuel_mine_deliveries = db.relationship('FuelMineDelivery', backref='fuel_contract', lazy='dynamic')
@@ -71,7 +70,6 @@ class FuelTransportation(db.Model):
     transport_unit_price = db.Column(db.Float)  # 拉运单价
     transport_location = db.Column(db.String(128))  # 拉运地点
     transport_contract = db.Column(db.String(128))  # 拉运合同
-    transport_company = db.Column(db.String(128))  # 拉运单位
     transportation_unit_price = db.Column(db.Float)  # 运输单价
     transport_quantity = db.Column(db.Float)  # 拉运数量
     transportation_amount = db.Column(db.Float)  # 运输金额
